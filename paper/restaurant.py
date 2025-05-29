@@ -84,7 +84,7 @@ embedding_dim = 100  # misal glove.6B.100d.txt
 
 # Load GloVe embeddings ke dictionary
 embedding_index = {}
-with open("glove.6B.100d.txt", encoding='utf8') as f:
+with open(r"C:\nlp_data\glove.6B.100d.txt", encoding='utf8') as f:
     for line in f:
         values = line.split()
         word = values[0]

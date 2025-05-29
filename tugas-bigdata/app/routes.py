@@ -1,11 +1,11 @@
 from flask import Blueprint, request, jsonify # type: ignore
 from .hive_conn import get_conn
-import os
 from .spark_job import create_spark_session, process_csv
+from flask_cors import CORS
 
 bp = Blueprint('main', __name__)
-UPLOAD_FOLDER = 'uploads'
 spark = create_spark_session()
+CORS(bp)
 
 @bp.route('/upload', methods=['POST'])
 def upload_csv():
@@ -16,7 +16,7 @@ def upload_csv():
     if file.filename == '':
         return jsonify({'error': 'No selected file'}), 400
 
-    # Simpan file ke folder lokal
+    # Sampan file ke folder lokal
     file_path = file.filename  
     file.save(file_path)
     try:

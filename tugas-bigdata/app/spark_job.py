@@ -1,6 +1,12 @@
 import os
 import subprocess
 import time
+import findspark
+import spark
+
+
+findspark.init()
+
 from pyspark.sql import SparkSession
 
 def create_spark_session():
@@ -14,6 +20,7 @@ def create_spark_session():
         .config("spark.ui.showConsoleProgress", "true") \
         .config("spark.sql.execution.arrow.pyspark.enabled", "true") \
         .getOrCreate()
+spark.sparkContext.setLogLevel("ERROR")
 
 HDFS_CMD = r"C:\hadoop\bin\hdfs.cmd"
 
