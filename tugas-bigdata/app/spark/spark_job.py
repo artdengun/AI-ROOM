@@ -7,7 +7,7 @@ import spark
 
 findspark.init()
 
-from pyspark.sql import SparkSession
+from pyspark.sql import SparkSession, Row
 
 def create_spark_session():
     return SparkSession.builder \
@@ -20,9 +20,9 @@ def create_spark_session():
         .config("spark.ui.showConsoleProgress", "true") \
         .config("spark.sql.execution.arrow.pyspark.enabled", "true") \
         .getOrCreate()
-spark.sparkContext.setLogLevel("ERROR")
 
-HDFS_CMD = r"C:\hadoop\bin\hdfs.cmd"
+HDFS_CMD = r"C:\Hadoop\hadoop-3.3.6\bin\hdfs.cmd"
+
 
 def hdfs_file_exists(hdfs_dir: str, filename: str) -> bool:
     """Cek apakah file dengan nama tertentu ada di dalam folder HDFS."""
@@ -46,7 +46,7 @@ def hdfs_file_exists(hdfs_dir: str, filename: str) -> bool:
     return False
 
 def process_csv(spark: SparkSession, local_file_path: str):
-    """Upload file ke HDFS jika belum ada dan baca pakai Spark."""
+    """Upload file ke HDFS jika belum ada dan baca pakai Spark, lalu broadcast data."""
 
     filename = os.path.basename(local_file_path)
     hdfs_dir = "/uploads"
@@ -61,10 +61,37 @@ def process_csv(spark: SparkSession, local_file_path: str):
             time.sleep(1)
         else:
             print(f"File {hdfs_path} sudah ada di HDFS. Lewati upload.")
+            df = spark.read.option("header", "true").csv(hdfs_uri)
 
-        df = spark.read.option("header", "true").csv(hdfs_uri)
+            # Ambil SparkContext
+            sc = spark.sparkContext
+
+            # Broadcast kolom pertama sebagai list
+            first_col = df.columns[0]
+            data_list = df.select(first_col).rdd.map(lambda row: row[0]).collect()
+            broadcast_data = sc.broadcast(data_list)
+            print(f"[INFO] Broadcast data: {broadcast_data.value}")
+
+            # Siapkan data untuk paralelisasi (bisa pakai index baris misal)
+            data = list(range(1, 11))  # 10 worker
+
+            rdd = sc.parallelize(data, 10)  # 10 partisi supaya ada 10 worker
+
+            def process_partition(x):
+                # Akses broadcast data di tiap worker
+                broadcast_value = broadcast_data.value
+                broadcast_str = ", ".join(broadcast_value)  # atau kamu sesuaikan tampilannya
+                return Row(worker=f"Worker {x}", broadcast_data=broadcast_str)
+
+            result = rdd.map(process_partition).collect()
+            result_df = spark.createDataFrame(result)
+            result_df.show(truncate=False)
+            for r in result:
+                print(r)
+        print("=========================================")
         df.show(5)
-        return df
+        # Kamu bisa return df dan broadcast_data kalau perlu
+        return df, broadcast_data
 
     except subprocess.CalledProcessError as e:
         print("Error saat menjalankan perintah HDFS:", e)

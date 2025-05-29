@@ -1,4 +1,5 @@
 # app/services/jabatan_service.py
+from flask import jsonify
 from app.hive.hive_conn import get_conn
 
 def create_jabatan(nama_jabatan):
@@ -27,7 +28,15 @@ def update_jabatan(id, nama_jabatan):
         WHERE id={id}
     """)
 
+
 def delete_jabatan(id):
+    try:
+        id = int(id)  # Validasi manual untuk mencegah injection
+    except ValueError:
+        return jsonify({'error': 'Invalid ID'}), 400
+
     conn = get_conn()
     cursor = conn.cursor()
-    cursor.execute(f"DELETE FROM jabatan WHERE id={id}")
+
+    cursor.execute(f"DELETE FROM jabatan WHERE id = {id}")
+    return jsonify({'message': 'Jabatan deleted'}), 200

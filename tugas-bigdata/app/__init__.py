@@ -7,8 +7,6 @@ import os
 def create_app():
     app = Flask(__name__)
     os.makedirs('uploads', exist_ok=True)
-
-    from .routes import bp as main_bp
     app.register_blueprint(upload_bp)
     app.register_blueprint(jabatan_bp)
     app.register_blueprint(pegawai_bp)
