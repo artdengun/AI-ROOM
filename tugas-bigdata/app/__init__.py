@@ -1,4 +1,7 @@
 from flask import Flask
+from app.routes.uploads_routes import upload_bp
+from app.routes.pegawai_routes import pegawai_bp
+from app.routes.jabatan_routes import jabatan_bp
 import os
 
 def create_app():
@@ -6,6 +9,8 @@ def create_app():
     os.makedirs('uploads', exist_ok=True)
 
     from .routes import bp as main_bp
-    app.register_blueprint(main_bp)
+    app.register_blueprint(upload_bp)
+    app.register_blueprint(jabatan_bp)
+    app.register_blueprint(pegawai_bp)
 
     return app
