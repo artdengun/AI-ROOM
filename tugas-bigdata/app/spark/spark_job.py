@@ -11,7 +11,7 @@ from pyspark.sql import SparkSession, Row
 
 def create_spark_session():
     return SparkSession.builder \
-        .appName("MyAwesomeSparkApp") \
+        .appName("BigData") \
         .master("local[*]") \
         .config("spark.driver.memory", "2g") \
         .config("spark.sql.shuffle.partitions", "4") \
