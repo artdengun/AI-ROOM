@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Manajemen Modern</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Font Awesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        /* Custom styles for a more modern and eye-catching look */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f4f8; /* A lighter, cooler gray */
+            background-image: linear-gradient(to top right, #e0f2fe, #f1f5f9); /* sky-100 to slate-100 */
+        }
+        .card {
+            background-color: rgba(255, 255, 255, 0.85); /* Slightly transparent card */
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 1rem; /* rounded-2xl */
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.1); /* Softer, more modern shadow */
+            transition: all 0.3s ease-in-out;
+        }
+        .btn-primary {
+            background-image: linear-gradient(to right, #4f46e5, #6366f1); /* Indigo gradient */
+            color: white;
+            border-radius: 0.5rem;
+            transition: all 0.3s;
+            box-shadow: 0 4px 15px 0 rgba(79, 70, 229, 0.3);
+        }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 7px 20px 0 rgba(79, 70, 229, 0.4);
+        }
+        .modal-backdrop {
+            background-color: rgba(17, 24, 39, 0.6); /* gray-900 with more opacity */
+            backdrop-filter: blur(4px);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        .modal-backdrop.active {
+            opacity: 1;
+        }
+        .modal {
+            transform: scale(0.95) translateY(20px);
+            opacity: 0;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .modal-backdrop.active .modal {
+            transform: scale(1) translateY(0);
+            opacity: 1;
+        }
+        .form-input:focus {
+            ring-color: #818cf8; /* indigo-300 */
+            border-color: #6366f1; /* indigo-500 */
+        }
+        .list-item {
+            transition: all 0.2s ease-in-out;
+        }
+        .list-item:hover {
+            background-color: #eef2ff; /* indigo-50 */
+            transform: translateX(4px);
+        }
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-in-up {
+            animation: fadeInUp 0.5s ease-out forwards;
+        }
+        /* Custom file input */
+        .file-input-label {
+            border: 2px dashed #c7d2fe;
+            border-radius: 0.75rem;
+            padding: 2rem;
+            cursor: pointer;
+            transition: background-color 0.2s ease-in-out;
+        }
+        .file-input-label:hover {
+            background-color: #eef2ff;
+        }
+    </style>
+</head>
+<body class="antialiased text-slate-800">
+
+    <!-- Notification Container -->
+    <div id="notification" class="hidden fixed top-5 right-5 z-50 px-6 py-4 rounded-xl text-white font-semibold shadow-lg transition-all duration-300">
+        <i id="notification-icon" class="mr-2"></i>
+        <span id="notification-message"></span>
+    </div>
+
+    <!-- Main Container -->
+    <div class="container mx-auto p-4 md:p-8">
+        <header class="text-center mb-12 animate-fade-in-up">
+            <h1 class="text-5xl font-extrabold text-slate-900 tracking-tight">Manajemen Pegawai</h1>
+            <p class="text-lg text-slate-600 mt-3">Tugas Kelompok Big Data (Hadoop dengan Hipe)</p>
+        </header>
+        
+        <main class="grid grid-cols-1 gap-8">
+             <!-- Upload CSV Section -->
+             <section id="upload-section" class="animate-fade-in-up" style="animation-delay: 0.2s;">
+                <div class="card p-6">
+                    <h2 class="text-2xl font-bold mb-5 flex items-center"><i class="fas fa-file-csv mr-3 text-indigo-600"></i>Upload Data dari CSV</h2>
+                    <form id="form-upload-csv">
+                        <label for="csv-file" class="file-input-label flex flex-col items-center justify-center text-center">
+                            <i class="fas fa-cloud-upload-alt text-4xl text-slate-400 mb-3"></i>
+                            <span class="font-semibold text-indigo-600">Pilih file CSV</span>
+                            <span class="text-slate-500 text-sm mt-1">atau seret dan lepas di sini</span>
+                        </label>
+                        <input type="file" id="csv-file" class="hidden" accept=".csv">
+                        <p id="file-name-display" class="text-center text-slate-600 mt-4"></p>
+                        <button type="submit" class="w-full mt-4 px-4 py-3 font-semibold rounded-lg btn-primary" disabled>
+                            <i class="fas fa-upload mr-2"></i>Upload File
+                        </button>
+                    </form>
+                </div>
+            </section>
+            
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <!-- JABATAN Section -->
+                <section id="jabatan-section" class="animate-fade-in-up" style="animation-delay: 0.4s;">
+                    <div class="card p-6 h-full">
+                        <h2 class="text-2xl font-bold mb-5 flex items-center"><i class="fas fa-layer-group mr-3 text-indigo-600"></i>Manajemen Jabatan</h2>
+                        <form id="form-tambah-jabatan" class="mb-6">
+                            <input type="text" id="nama-jabatan" placeholder="Nama Jabatan Baru" required class="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 form-input transition">
+                            <button type="submit" class="w-full mt-3 px-4 py-3 font-semibold rounded-lg btn-primary">
+                                <i class="fas fa-plus mr-2"></i>Tambah Jabatan
+                            </button>
+                        </form>
+                        <div id="daftar-jabatan" class="space-y-3 overflow-y-auto max-h-96 pr-2">
+                            <div class="text-center text-slate-500 py-4">Memuat data...</div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- PEGAWAI Section -->
+                <section id="pegawai-section" class="animate-fade-in-up" style="animation-delay: 0.6s;">
+                    <div class="card p-6 h-full">
+                        <h2 class="text-2xl font-bold mb-5 flex items-center"><i class="fas fa-users-cog mr-3 text-indigo-600"></i>Manajemen Pegawai</h2>
+                        <form id="form-tambah-pegawai" class="space-y-4 mb-6">
+                            <input type="text" id="nama-pegawai" placeholder="Nama Pegawai" required class="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 form-input transition">
+                            <select id="jabatan-pegawai" required class="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 form-input transition bg-white">
+                                <option value="">Pilih Jabatan...</option>
+                            </select>
+                            <button type="submit" class="w-full px-4 py-3 font-semibold rounded-lg btn-primary">
+                               <i class="fas fa-user-plus mr-2"></i> Tambah Pegawai
+                            </button>
+                        </form>
+                        <div id="daftar-pegawai" class="space-y-3 overflow-y-auto max-h-96 pr-2">
+                            <div class="text-center text-slate-500 py-4">Memuat data...</div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modals Container -->
+    <div id="modal-edit-jabatan" class="fixed inset-0 z-40 items-center justify-center hidden modal-backdrop">
+        <div class="card p-8 w-11/12 md:w-1/3 modal">
+            <h3 class="text-xl font-bold mb-4">Edit Jabatan</h3>
+            <form id="form-edit-jabatan">
+                <input type="hidden" id="edit-jabatan-id">
+                <input type="text" id="edit-nama-jabatan" required class="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 form-input transition">
+                <div class="mt-6 flex justify-end space-x-3">
+                    <button type="button" data-modal-close="modal-edit-jabatan" class="px-5 py-2 bg-slate-200 hover:bg-slate-300 rounded-lg font-semibold transition">Batal</button>
+                    <button type="submit" class="px-5 py-2 btn-primary rounded-lg font-semibold">Simpan</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <div id="modal-edit-pegawai" class="fixed inset-0 z-40 items-center justify-center hidden modal-backdrop">
+        <div class="card p-8 w-11/12 md:w-1/3 modal">
+            <h3 class="text-xl font-bold mb-4">Edit Pegawai</h3>
+            <form id="form-edit-pegawai" class="space-y-4">
+                <input type="hidden" id="edit-pegawai-id">
+                <input type="text" id="edit-nama-pegawai" required class="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 form-input transition">
+                <select id="edit-jabatan-pegawai" required class="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 form-input transition bg-white">
+                </select>
+                <div class="mt-6 flex justify-end space-x-3">
+                    <button type="button" data-modal-close="modal-edit-pegawai" class="px-5 py-2 bg-slate-200 hover:bg-slate-300 rounded-lg font-semibold transition">Batal</button>
+                    <button type="submit" class="px-5 py-2 btn-primary rounded-lg font-semibold">Simpan</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <div id="modal-konfirmasi" class="fixed inset-0 z-50 items-center justify-center hidden modal-backdrop">
+        <div class="card p-8 w-11/12 md:max-w-md modal text-center">
+            <i class="fas fa-exclamation-triangle text-4xl text-yellow-500 mb-4"></i>
+            <h3 class="text-xl font-bold mb-2">Konfirmasi Tindakan</h3>
+            <p id="konfirmasi-message" class="text-slate-600 mb-6">Apakah Anda yakin?</p>
+            <div class="flex justify-center space-x-4">
+                <button id="konfirmasi-btn-batal" class="px-6 py-2 bg-slate-200 hover:bg-slate-300 rounded-lg font-semibold transition">Batal</button>
+                <button id="konfirmasi-btn-setuju" class="px-6 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-semibold transition shadow-md hover:shadow-lg">Ya, Hapus</button>
+            </div>
+        </div>
+    </div>
+
+
+    <script>
+        // --- CONFIGURATION ---
+        const API_BASE_URL = 'http://127.0.0.1:5000';
+
+        // --- DOM ELEMENTS ---
+        const formUploadCsv = document.getElementById('form-upload-csv');
+        const csvFileInput = document.getElementById('csv-file');
+        const fileNameDisplay = document.getElementById('file-name-display');
+        const uploadButton = formUploadCsv.querySelector('button[type="submit"]');
+
+        const daftarJabatanEl = document.getElementById('daftar-jabatan');
+        const daftarPegawaiEl = document.getElementById('daftar-pegawai');
+        const formTambahJabatan = document.getElementById('form-tambah-jabatan');
+        const formTambahPegawai = document.getElementById('form-tambah-pegawai');
+        const jabatanPegawaiSelect = document.getElementById('jabatan-pegawai');
+        
+        const formEditJabatan = document.getElementById('form-edit-jabatan');
+        const editJabatanIdInput = document.getElementById('edit-jabatan-id');
+        const editNamaJabatanInput = document.getElementById('edit-nama-jabatan');
+
+        const formEditPegawai = document.getElementById('form-edit-pegawai');
+        const editPegawaiIdInput = document.getElementById('edit-pegawai-id');
+        const editNamaPegawaiInput = document.getElementById('edit-nama-pegawai');
+        const editJabatanPegawaiSelect = document.getElementById('edit-jabatan-pegawai');
+
+        // --- UTILITY FUNCTIONS ---
+        function showNotification(message, type = 'success') {
+            const notification = document.getElementById('notification');
+            const notificationMessage = document.getElementById('notification-message');
+            const notificationIcon = document.getElementById('notification-icon');
+
+            notificationMessage.textContent = message;
+            notification.className = 'fixed top-5 right-5 z-50 px-6 py-4 rounded-xl text-white font-semibold shadow-lg transition-all duration-300 flex items-center';
+            
+            if (type === 'success') {
+                notification.classList.add('bg-green-500');
+                notificationIcon.className = 'fas fa-check-circle mr-2';
+            } else {
+                notification.classList.add('bg-red-500');
+                notificationIcon.className = 'fas fa-exclamation-circle mr-2';
+            }
+
+            notification.style.transform = 'translateX(100%)';
+            notification.style.opacity = '0';
+            requestAnimationFrame(() => {
+                notification.style.transform = 'translateX(0)';
+                notification.style.opacity = '1';
+            });
+
+            setTimeout(() => {
+                notification.style.transform = 'translateX(100%)';
+                notification.style.opacity = '0';
+                setTimeout(() => notification.classList.add('hidden'), 300);
+            }, 3000);
+        }
+
+        function openModal(modalId) {
+            const modal = document.getElementById(modalId);
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            requestAnimationFrame(() => modal.classList.add('active'));
+        }
+
+        function closeModal(modalId) {
+            const modal = document.getElementById(modalId);
+            modal.classList.remove('active');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+            }, 300);
+        }
+
+        function showConfirmationModal(message, onConfirm) {
+            const modal = document.getElementById('modal-konfirmasi');
+            document.getElementById('konfirmasi-message').textContent = message;
+            openModal('modal-konfirmasi');
+
+            const confirmBtn = document.getElementById('konfirmasi-btn-setuju');
+            const cancelBtn = document.getElementById('konfirmasi-btn-batal');
+
+            const confirmHandler = () => { onConfirm(); closeModal('modal-konfirmasi'); cleanup(); };
+            const cancelHandler = () => { closeModal('modal-konfirmasi'); cleanup(); };
+            
+            function cleanup() {
+                confirmBtn.removeEventListener('click', confirmHandler);
+                cancelBtn.removeEventListener('click', cancelHandler);
+            }
+
+            confirmBtn.addEventListener('click', confirmHandler, { once: true });
+            cancelBtn.addEventListener('click', cancelHandler, { once: true });
+        }
+        
+        // --- UPLOAD CSV FUNCTION ---
+        csvFileInput.addEventListener('change', () => {
+            if (csvFileInput.files.length > 0) {
+                fileNameDisplay.textContent = `File dipilih: ${csvFileInput.files[0].name}`;
+                uploadButton.disabled = false;
+            } else {
+                fileNameDisplay.textContent = '';
+                uploadButton.disabled = true;
+            }
+        });
+
+        formUploadCsv.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if (csvFileInput.files.length === 0) {
+                showNotification('Silakan pilih file CSV terlebih dahulu.', 'error');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('file', csvFileInput.files[0]);
+            uploadButton.disabled = true;
+            uploadButton.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Mengunggah...';
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/upload_csv`, {
+                    method: 'POST',
+                    body: formData,
+                });
+
+                const result = await response.json();
+                if (!response.ok) {
+                    throw new Error(result.error || 'Gagal mengunggah file.');
+                }
+                
+                showNotification(result.message || 'File berhasil diunggah!');
+                // Refresh data
+                fetchJabatan();
+                fetchPegawai();
+            } catch (error) {
+                showNotification(error.message, 'error');
+            } finally {
+                // Reset form
+                formUploadCsv.reset();
+                fileNameDisplay.textContent = '';
+                uploadButton.disabled = true;
+                uploadButton.innerHTML = '<i class="fas fa-upload mr-2"></i>Upload File';
+            }
+        });
+
+
+        // --- JABATAN API FUNCTIONS ---
+        async function fetchJabatan() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/jabatan`);
+                if (!response.ok) throw new Error('Gagal mengambil data jabatan.');
+                const jabatan = await response.json();
+                
+                daftarJabatanEl.innerHTML = '';
+                if (jabatan.length === 0) {
+                    daftarJabatanEl.innerHTML = `<p class="text-slate-500 text-center">Belum ada data jabatan.</p>`;
+                } else {
+                    jabatan.forEach(j => {
+                        const div = document.createElement('div');
+                        div.className = 'list-item flex items-center justify-between p-3 bg-slate-50 rounded-lg border border-slate-200';
+                        div.innerHTML = `
+                            <span class="font-semibold text-slate-700">${j.nama_jabatan}</span>
+                            <div class="space-x-1">
+                                <button onclick="showEditJabatanModal(${j.id}, '${j.nama_jabatan}')" class="px-3 py-1 text-sm text-blue-600 hover:bg-blue-100 rounded-md transition"><i class="fas fa-edit"></i></button>
+                                <button onclick="deleteJabatan(${j.id})" class="px-3 py-1 text-sm text-red-600 hover:bg-red-100 rounded-md transition"><i class="fas fa-trash"></i></button>
+                            </div>
+                        `;
+                        daftarJabatanEl.appendChild(div);
+                    });
+                }
+                populateJabatanDropdowns(jabatan);
+            } catch (error) {
+                showNotification(error.message, 'error');
+                daftarJabatanEl.innerHTML = `<p class="text-red-500 text-center">${error.message}</p>`;
+            }
+        }
+        
+        formTambahJabatan.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const namaJabatan = document.getElementById('nama-jabatan').value;
+            try {
+                const response = await fetch(`${API_BASE_URL}/jabatan`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ nama_jabatan: namaJabatan })
+                });
+                if (!response.ok) throw new Error((await response.json()).error || 'Gagal menambahkan jabatan.');
+                showNotification((await response.json()).message);
+                formTambahJabatan.reset();
+                fetchJabatan();
+            } catch (error) { showNotification(error.message, 'error'); }
+        });
+
+        function showEditJabatanModal(id, nama) {
+            editJabatanIdInput.value = id;
+            editNamaJabatanInput.value = nama;
+            openModal('modal-edit-jabatan');
+        }
+        
+        formEditJabatan.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const id = editJabatanIdInput.value;
+            const namaJabatan = editNamaJabatanInput.value;
+            try {
+                const response = await fetch(`${API_BASE_URL}/jabatan/${id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ nama_jabatan: namaJabatan })
+                });
+                if (!response.ok) throw new Error('Gagal mengupdate jabatan.');
+                showNotification((await response.json()).message);
+                closeModal('modal-edit-jabatan');
+                fetchJabatan();
+            } catch (error) { showNotification(error.message, 'error'); }
+        });
+
+        function deleteJabatan(id) {
+            showConfirmationModal('Apakah Anda yakin ingin menghapus jabatan ini?', async () => {
+                try {
+                    const response = await fetch(`${API_BASE_URL}/jabatan/${id}`, { method: 'DELETE' });
+                    if (!response.ok) throw new Error('Gagal menghapus jabatan.');
+                    showNotification((await response.json()).message);
+                    fetchJabatan();
+                    fetchPegawai();
+                } catch (error) { showNotification(error.message, 'error'); }
+            });
+        }
+
+        // --- PEGAWAI API FUNCTIONS ---
+        async function fetchPegawai() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/pegawai`);
+                if (!response.ok) throw new Error('Gagal mengambil data pegawai.');
+                const pegawai = await response.json();
+
+                daftarPegawaiEl.innerHTML = '';
+                if (pegawai.length === 0) {
+                     daftarPegawaiEl.innerHTML = `<p class="text-slate-500 text-center">Belum ada data pegawai.</p>`;
+                } else {
+                    pegawai.forEach(p => {
+                        const div = document.createElement('div');
+                        div.className = 'list-item flex items-center justify-between p-3 bg-slate-50 rounded-lg border border-slate-200';
+                        div.innerHTML = `
+                            <div>
+                                <p class="font-semibold text-slate-700">${p.nama}</p>
+                                <p class="text-sm text-slate-500">${p.jabatan || 'Tidak ada jabatan'}</p>
+                            </div>
+                            <div class="space-x-1">
+                                <button onclick="showEditPegawaiModal(${p.id}, '${p.nama}', '${p.jabatan_id}')" class="px-3 py-1 text-sm text-blue-600 hover:bg-blue-100 rounded-md transition"><i class="fas fa-edit"></i></button>
+                                <button onclick="deletePegawai(${p.id})" class="px-3 py-1 text-sm text-red-600 hover:bg-red-100 rounded-md transition"><i class="fas fa-trash"></i></button>
+                            </div>
+                        `;
+                        daftarPegawaiEl.appendChild(div);
+                    });
+                }
+            } catch (error) {
+                showNotification(error.message, 'error');
+                daftarPegawaiEl.innerHTML = `<p class="text-red-500 text-center">${error.message}</p>`;
+            }
+        }
+        
+        function populateJabatanDropdowns(jabatanList) {
+            const selects = [jabatanPegawaiSelect, editJabatanPegawaiSelect];
+            selects.forEach(select => {
+                const currentValue = select.value;
+                select.innerHTML = '<option value="">Pilih Jabatan...</option>';
+                jabatanList.forEach(j => {
+                    select.innerHTML += `<option value="${j.id}">${j.nama_jabatan}</option>`;
+                });
+                select.value = currentValue;
+            });
+        }
+        
+        formTambahPegawai.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const nama = document.getElementById('nama-pegawai').value;
+            const jabatanId = document.getElementById('jabatan-pegawai').value;
+            if (!jabatanId) {
+                showNotification('Silakan pilih jabatan.', 'error');
+                return;
+            }
+            try {
+                const response = await fetch(`${API_BASE_URL}/pegawai`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ nama: nama, jabatan_id: parseInt(jabatanId) })
+                });
+                if (!response.ok) throw new Error((await response.json()).error || 'Gagal menambahkan pegawai.');
+                showNotification((await response.json()).message);
+                formTambahPegawai.reset();
+                fetchPegawai();
+            } catch (error) { showNotification(error.message, 'error'); }
+        });
+        
+        async function showEditPegawaiModal(id, nama, jabatanId) {
+            await fetchJabatan();
+            editPegawaiIdInput.value = id;
+            editNamaPegawaiInput.value = nama;
+            editJabatanPegawaiSelect.value = jabatanId;
+            openModal('modal-edit-pegawai');
+        }
+        
+        formEditPegawai.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const id = editPegawaiIdInput.value;
+            const nama = editNamaPegawaiInput.value;
+            const jabatanId = editJabatanPegawaiSelect.value;
+            try {
+                const response = await fetch(`${API_BASE_URL}/pegawai/${id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ nama: nama, jabatan_id: parseInt(jabatanId) })
+                });
+                if (!response.ok) throw new Error((await response.json()).error || 'Gagal mengupdate pegawai.');
+                showNotification((await response.json()).message);
+                closeModal('modal-edit-pegawai');
+                fetchPegawai();
+            } catch (error) { showNotification(error.message, 'error'); }
+        });
+        
+        function deletePegawai(id) {
+            showConfirmationModal('Apakah Anda yakin ingin menghapus pegawai ini?', async () => {
+                try {
+                    const response = await fetch(`${API_BASE_URL}/pegawai/${id}`, { method: 'DELETE' });
+                    if (!response.ok) throw new Error('Gagal menghapus pegawai.');
+                    showNotification((await response.json()).message);
+                    fetchPegawai();
+                } catch (error) { showNotification(error.message, 'error'); }
+            });
+        }
+
+        // --- INITIALIZATION ---
+        document.addEventListener('DOMContentLoaded', () => {
+            fetchJabatan();
+            fetchPegawai();
+
+            document.querySelectorAll('[data-modal-close]').forEach(button => {
+                button.addEventListener('click', () => {
+                    const modalId = button.getAttribute('data-modal-close');
+                    closeModal(modalId);
+                });
+            });
+        });
+    </script>
+</body>
+</html>

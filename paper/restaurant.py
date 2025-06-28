@@ -10,8 +10,6 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 from matplotlib import ticker # type: ignore
 from nltk.corpus import stopwords # type: ignore
 from nltk.stem import WordNetLemmatizer # type: ignore
-from wordcloud import WordCloud # type: ignore
-from sklearn.utils.class_weight import compute_class_weight # type: ignore
 from sklearn.model_selection import train_test_split # type: ignore
 from tensorflow.keras.preprocessing.text import Tokenizer # type: ignore
 from tensorflow.keras.preprocessing.sequence import pad_sequences # type: ignore
@@ -22,7 +20,6 @@ from bertopic import BERTopic # type: ignore
 from sklearn.metrics import classification_report, confusion_matrix # type: ignore
 from tensorflow.keras.optimizers import Adam # type: ignore
 from textblob import TextBlob # type: ignore
-from collections import Counter
 
 # Pastikan Plotly bisa menampilkan grafik
 pio.renderers.default = "colab"

@@ -5,7 +5,7 @@ def create_pegawai(nama, jabatan_id):
     conn = get_conn()
     cursor = conn.cursor()
     cursor.execute("SELECT MAX(id) FROM pegawai")
-    last_id = cursor.fetchone()[0]
+    last_id = cursor.fetchone()[0]  
     new_id = (last_id or 0) + 1
     cursor.execute(f"""
         INSERT INTO pegawai (id, nama, jabatan_id)
