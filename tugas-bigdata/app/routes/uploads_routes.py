@@ -6,7 +6,7 @@ upload_bp = Blueprint('upload', __name__)
 spark = create_spark_session()
 CORS(upload_bp)
 
-@upload_bp.route('/upload', methods=['POST'])
+@upload_bp.route('/', methods=['POST'])
 def upload_csv():
     if 'file' not in request.files:
         return jsonify({'error': 'No file part'}), 400

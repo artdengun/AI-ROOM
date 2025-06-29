@@ -11,7 +11,7 @@ def create_app():
     def index():
         return render_template('fe.html')
 
-    app.register_blueprint(upload_bp)
+    app.register_blueprint(upload_bp, url_prefix='/upload')
     app.register_blueprint(jabatan_bp)
     app.register_blueprint(pegawai_bp)
 

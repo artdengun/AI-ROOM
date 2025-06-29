@@ -27,3 +27,7 @@ pip install thrift-sasl==0.4.3
 pip install pyspark
 ```
 
+spark-class.cmd org.apache.spark.deploy.master.Master --host localhost
+spark-class.cmd org.apache.spark.deploy.worker.Worker spark://localhost:7077 --cores 1 --memory 1g
+spark-class.cmd org.apache.spark.deploy.worker.Worker spark://localhost:7077 --cores 1 --memory 1g
+spark-class.cmd org.apache.spark.deploy.worker.Worker spark://localhost:7077 --cores 1 --memory 1g
