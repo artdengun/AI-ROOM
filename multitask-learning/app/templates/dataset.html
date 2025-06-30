@@ -1,0 +1,119 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard - Multitask App{% endblock %}
+
+{% block content %}
+
+   <div class="container mt-4">
+  <!-- Upload -->
+  <div class="card">
+    <div class="card-header">
+      <h4 class="mb-0">Upload Dataset</h4>
+    </div>
+    <div class="card-body">
+      <form method="POST" enctype="multipart/form-data">
+        <div class="form-group">
+          <input type="file" name="dataset_file" class="form-control" required>
+        </div>
+        <button type="submit" class="btn btn-primary">Upload</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- List -->
+  <div class="card mt-4">
+    <div class="card-header">
+      <h4 class="mb-0">Dataset List</h4>
+    </div>
+    <div class="table-responsive">
+      <table class="table table-flush">
+        <thead class="thead-light">
+          <tr>
+            <th>No</th>
+            <th>Name</th>
+            <th>Size (KB)</th>
+            <th>Uploaded At</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for file in dataset_list %}
+          <tr>
+            <td>{{ loop.index }}</td>
+            <td>{{ file.name }}</td>
+            <td>{{ file.size }}</td>
+            <td>{{ file.uploaded_at }}</td>
+            <td>
+              <a href="{{ url_for('ui.dataset') }}?view={{ file.name }}" class="btn btn-sm btn-info">View</a>
+              <a href="{{ url_for('ui.delete_file', filename=file.name) }}" class="btn btn-sm btn-danger">Delete</a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Preview -->
+  {% if preview %}
+  <div class="card mt-4">
+    <div class="card-header">
+      <h4 class="mb-0">Preview: {{ selected_dataset }}</h4>
+    </div>
+    <div class="table-responsive">
+      <table class="table table-flush">
+        <thead class="thead-light">
+          <tr>
+            {% for col in preview.headers %}
+            <th>{{ col }}</th>
+            {% endfor %}
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in preview.rows %}
+          <tr>
+            {% for col in row %}
+            <td>{{ col }}</td>
+            {% endfor %}
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% endif %}
+</div>
+{%endblock %}    
+{% block scripts %}
+  <!--   Core JS Files   -->
+  <script src="../assets/js/core/popper.min.js"></script>
+  <script src="../assets/js/core/bootstrap.min.js"></script>
+  <script src="../assets/js/plugins/perfect-scrollbar.min.js"></script>
+  <script src="../assets/js/plugins/smooth-scrollbar.min.js"></script>
+  <script>
+    var win = navigator.platform.indexOf('Win') > -1;
+    if (win && document.querySelector('#sidenav-scrollbar')) {
+      var options = {
+        damping: '0.5'
+      }
+      Scrollbar.init(document.querySelector('#sidenav-scrollbar'), options);
+    }
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+  <script>
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          Swal.fire({
+            icon: '{{ 'success' if category == 'success' else 'error' }}',
+            title: '{{ 'Berhasil' if category == 'success' else 'Oops!' }}',
+            text: '{{ message }}',
+            confirmButtonColor: '#3085d6',
+          });
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+  </script>
+
+{%endblock %}

@@ -7,6 +7,7 @@ import os
 
 def create_app():
     app = Flask(__name__,  static_folder='static', template_folder='templates')
+    app.secret_key = 'ini_rahasia_banget_12345'
     app.register_blueprint(ui_bp)
 
     # app.register_blueprint(upload_bp, url_prefix='/upload')
