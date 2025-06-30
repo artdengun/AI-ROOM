@@ -1,4 +1,6 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
+from flask import Blueprint, render_template, request, redirect, session, url_for, flash, jsonify
+import os
+import pandas as pd
 from app.services.dataset_service import (
     save_uploaded_file, 
     get_all_datasets, 
@@ -62,29 +64,50 @@ def dashboard():
     ]
 
     return render_template('dashboard.html', 
-                           stat=stat, 
-                           predictions=predictions,
-                           emotion_distribution=emotion_distribution)
+                        stat=stat, 
+                        predictions=predictions,
+                        emotion_distribution=emotion_distribution)
 
 @ui_bp.route('/preprocessing')
 def preprocessing():
-    dataset_list = get_all_datasets()
-    return render_template('preprocessing.html', dataset_list=dataset_list)
+    output_file = session.pop('output_file', None)  # diambil sekali lalu dihapus
+    return render_template(
+        "preprocessing.html",
+        dataset_list=get_all_datasets(),
+        output_file=output_file
+    )
+
 
 @ui_bp.route('/preprocessing/run', methods=['POST'])
 def run_pipeline():
     try:
         input_file = request.form.get("input_file")
-        output_file = request.form.get("output_file")
+        if not input_file:
+            flash("Input file harus dipilih.", "danger")
+            return redirect(url_for('ui.preprocessing'))
 
-        if not input_file or not output_file:
-            raise ValueError("input_file dan output_file harus disertakan.")
+        app_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..',  '..'))
+        dataset_path = os.path.join(app_dir, 'uploads', 'datasets', input_file)
+        print("Path result : ", dataset_path)
+        if not os.path.isfile(dataset_path):
+            flash(f"File '{input_file}' tidak ditemukan.", "danger")
+            return redirect(url_for('ui.preprocessing'))
 
-        log = run_preprocessing_pipeline(input_file, output_file)
-        return jsonify({"status": "success", "log": log})
+        # Baca dataset
+        df = pd.read_csv(dataset_path)
+
+        # Jalankan preprocessing
+        log, output_file = run_preprocessing_pipeline(df, input_file)
+
+        session['output_file'] = output_file
+        flash(log, "success")
+        return redirect(url_for('ui.preprocessing'))
+
+
     except Exception as e:
-        return jsonify({"status": "error", "log": str(e)})
-
+        flash(f"Terjadi kesalahan: {str(e)}", "danger")
+        return redirect(url_for('ui.preprocessing'))
+    
 @ui_bp.route('/profile')
 def profile():
     return render_template('profile.html')
@@ -97,7 +120,6 @@ def signin():
 @ui_bp.route('/sign-up')
 def singnup():
     return render_template('sign-up.html')
-
 
 @ui_bp.route('/dataset', methods=['GET', 'POST'])
 def dataset():

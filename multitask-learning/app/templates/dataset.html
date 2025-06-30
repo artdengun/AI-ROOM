@@ -45,7 +45,10 @@
             <td>{{ file.uploaded_at }}</td>
             <td>
               <a href="{{ url_for('ui.dataset') }}?view={{ file.name }}" class="btn btn-sm btn-info">View</a>
-              <a href="{{ url_for('ui.delete_file', filename=file.name) }}" class="btn btn-sm btn-danger">Delete</a>
+              <a href="#" class="btn btn-sm btn-danger"
+                onclick="confirmDelete('{{ url_for('ui.delete_file', filename=file.name) }}', '{{ file.name }}')">
+                Delete
+              </a>
             </td>
           </tr>
           {% endfor %}
@@ -97,20 +100,37 @@
     }
   </script>
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-
-  <script>
-    {% with messages = get_flashed_messages(with_categories=true) %}
-      {% if messages %}
-        {% for category, message in messages %}
-          Swal.fire({
-            icon: '{{ 'success' if category == 'success' else 'error' }}',
-            title: '{{ 'Berhasil' if category == 'success' else 'Oops!' }}',
-            text: '{{ message }}',
-            confirmButtonColor: '#3085d6',
-          });
-        {% endfor %}
-      {% endif %}
-    {% endwith %}
-  </script>
+<script>
+  function confirmDelete(url, filename) {
+    Swal.fire({
+      title: 'Hapus file ini?',
+      text: filename,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#6c757d',
+      confirmButtonText: 'Ya, hapus!',
+      cancelButtonText: 'Batal'
+    }).then((result) => {
+      if (result.isConfirmed) {
+        window.location.href = url;
+      }
+    });
+  }
+</script>
+<script>
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      {% for category, message in messages %}
+        Swal.fire({
+          icon: '{{ 'success' if category == 'success' else 'error' }}',
+          title: '{{ 'Berhasil' if category == 'success' else 'Oops!' }}',
+          html: '{{ message | safe }}',
+          confirmButtonColor: '#3085d6',
+        });
+      {% endfor %}
+    {% endif %}
+  {% endwith %}
+</script>
 
 {%endblock %}
