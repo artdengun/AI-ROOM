@@ -1,10 +1,14 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash
+from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
 from app.services.dataset_service import (
     save_uploaded_file, 
     get_all_datasets, 
     read_dataset_preview, 
     delete_dataset
 )
+from app.services.preprocessing_service import run_preprocessing_pipeline
+
+
+
 ui_bp = Blueprint('ui', __name__)
 
 @ui_bp.route('/')
@@ -61,9 +65,26 @@ def dashboard():
                            stat=stat, 
                            predictions=predictions,
                            emotion_distribution=emotion_distribution)
-@ui_bp.route('/billing')
-def billing():
-    return render_template('billing.html')
+
+@ui_bp.route('/preprocessing')
+def preprocessing():
+    dataset_list = get_all_datasets()
+    return render_template('preprocessing.html', dataset_list=dataset_list)
+
+@ui_bp.route('/preprocessing/run', methods=['POST'])
+def run_pipeline():
+    try:
+        input_file = request.form.get("input_file")
+        output_file = request.form.get("output_file")
+
+        if not input_file or not output_file:
+            raise ValueError("input_file dan output_file harus disertakan.")
+
+        log = run_preprocessing_pipeline(input_file, output_file)
+        return jsonify({"status": "success", "log": log})
+    except Exception as e:
+        return jsonify({"status": "error", "log": str(e)})
+
 @ui_bp.route('/profile')
 def profile():
     return render_template('profile.html')

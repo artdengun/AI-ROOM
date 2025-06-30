@@ -1,0 +1,98 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard - Multitask App{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+  <div class="card">
+    <div class="card-header">
+      <h4 class="mb-0">Text Preprocessing Pipeline</h4>
+    </div>
+    <div class="card-body">
+      <form method="POST" action="{{ url_for('ui.run_pipeline') }}">
+        <div class="form-group">
+          <label for="dataset">Pilih Dataset</label>
+          <select name="dataset" class="form-control" required>
+            {% for file in dataset_list %}
+              <option value="{{ file.name }}">{{ file.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <button type="submit" class="btn btn-primary mt-3">Mulai Preprocessing</button>
+      </form>
+    </div>
+  </div>
+
+  <div class="card mt-4">
+    <div class="card-header">
+      <h5 class="mb-0">Pipeline Status</h5>
+    </div>
+    <div class="card-body">
+      <ul class="list-group pipeline-list">
+        {% for step in ['Case Folding', 'Cleansing', 'Normalization', 'Tokenizing', 'Stopword Removal', 'Stemming'] %}
+        <li class="list-group-item d-flex justify-content-between align-items-center">
+          <div>
+            <span class="spinner-border spinner-border-sm text-primary d-none" id="spinner-{{ loop.index }}"></span>
+            <span id="label-{{ loop.index }}">{{ step }}</span>
+          </div>
+          <span id="status-{{ loop.index }}">
+            <i class="text-muted">Menunggu...</i>
+          </span>
+        </li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+
+  <div class="card mt-4">
+    <div class="card-header">
+      <h5 class="mb-0">Log Proses</h5>
+    </div>
+    <div class="card-body">
+      <pre id="log-box" style="background: #f8f9fa; padding: 15px; height: 200px; overflow-y: auto;"></pre>
+    </div>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+  <!--   Core JS Files   -->
+  <script>
+    var win = navigator.platform.indexOf('Win') > -1;
+    if (win && document.querySelector('#sidenav-scrollbar')) {
+      var options = {
+        damping: '0.5'
+      }
+      Scrollbar.init(document.querySelector('#sidenav-scrollbar'), options);
+    }
+  </script>
+  <script>
+  // Simulasi update pipeline status
+  document.querySelector('form').addEventListener('submit', function (e) {
+    let steps = 6;
+    for (let i = 1; i <= steps; i++) {
+      document.getElementById('spinner-' + i).classList.remove('d-none');
+      document.getElementById('status-' + i).innerHTML = '<span class="text-primary">Memproses...</span>';
+    }
+    
+    // Simulasi animasi dan log
+    let logBox = document.getElementById('log-box');
+    let stepNames = ['Case Folding', 'Cleansing', 'Normalization', 'Tokenizing', 'Stopword Removal', 'Stemming'];
+
+    let currentStep = 0;
+    let interval = setInterval(() => {
+      if (currentStep < steps) {
+        let idx = currentStep + 1;
+        document.getElementById('spinner-' + idx).classList.add('d-none');
+        document.getElementById('status-' + idx).innerHTML = '<i class="text-success fas fa-check-circle"></i>';
+        logBox.textContent += `✔️  ${stepNames[currentStep]} selesai\n`;
+        currentStep++;
+      } else {
+        clearInterval(interval);
+      }
+    }, 1000);
+  });
+</script>
+{% endblock %}
+</body>
+
+</html>
