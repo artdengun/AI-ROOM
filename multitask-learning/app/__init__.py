@@ -1,24 +1,16 @@
-from flask import Flask
-from flask_sqlalchemy import SQLAlchemy
-from flask_cors import CORS
-from dotenv import load_dotenv
+from flask import Flask, render_template
+from app.controllers.ui_controller import ui_bp
+# from app.routes.uploads_routes import upload_bp
+# from app.routes.pegawai_routes import pegawai_bp
+# from app.routes.jabatan_routes import jabatan_bp
 import os
 
-from app.controllers.predict_controller import predict_bp
-from app.controllers.upload_controller import upload_bp
-from app.controllers.ui_controller import ui_bp
-from app.models.review_model import db
+def create_app():
+    app = Flask(__name__,  static_folder='static', template_folder='templates')
+    app.register_blueprint(ui_bp)
 
-load_dotenv()
+    # app.register_blueprint(upload_bp, url_prefix='/upload')
+    # app.register_blueprint(jabatan_bp)
+    # app.register_blueprint(pegawai_bp)
 
-app = Flask(__name__)
-app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv("DATABASE_URL")
-app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
-
-db.init_app(app)
-CORS(app)
-
-# Register blueprint
-app.register_blueprint(predict_bp, url_prefix="/api")
-app.register_blueprint(upload_bp, url_prefix="/api")
-app.register_blueprint(ui_bp, url_prefix="/")
+    return app
