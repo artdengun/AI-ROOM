@@ -1,0 +1,244 @@
+{% extends 'base.html' %}
+{% block title %}Prediksi - Multitask App{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+  <div class="card mb-4">
+    <div class="card-header"><h5 class="mb-0">Prediksi Dataset</h5></div>
+    <div class="card-body">
+      <form method="POST" action="{{ url_for('ui.run_prediction') }}" id="predict-form">
+        <div class="form-group">
+          <label for="dataset">Pilih Dataset Preprocessed:</label>
+          <select name="dataset" class="form-control" required>
+            <option value="">-- Pilih File --</option>
+            {% for file in dataset_list %}
+              <option value="{{ file }}" {% if filename == file %}selected{% endif %}>{{ file }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <button type="submit" class="btn btn-primary mt-3">Jalankan Prediksi</button>
+
+        <!-- Progress -->
+        <div class="progress mt-3 d-none" id="predict-progress">
+          <div id="predict-bar" class="progress-bar progress-bar-striped progress-bar-animated"
+               role="progressbar" style="width: 0%">0%</div>
+        </div>
+        <small id="progress-label" class="text-muted d-none">Memproses: 0 dari ?</small>
+        <ul id="stage-steps" class="list-unstyled mt-2 mb-0 d-none text-secondary small">
+          <li id="step-load">➤ Memuat Model</li>
+          <li id="step-sentiment">➤ Prediksi Sentimen</li>
+          <li id="step-emotion">➤ Prediksi Emosi</li>
+          <li id="step-verdict">➤ Evaluasi Review Palsu</li>
+          <li id="step-save">➤ Menyimpan Hasil</li>
+        </ul>
+        <p id="progress-stage" class="text-muted small d-none mt-1">⌛ Tahap: -</p>
+      </form>
+    </div>
+  </div>
+
+  {% if rows %}
+  <div class="card mb-4">
+    <div class="card-body">
+      <h5 class="card-title">Hasil Prediksi: <span class="text-info">{{ filename }}</span></h5>
+      <form method="POST" action="{{ url_for('ui.download_prediction') }}">
+        <input type="hidden" name="filename" value="{{ filename }}">
+        <button type="submit" class="btn btn-success btn-sm">📥 Download Hasil (.csv)</button>
+      </form>
+    </div>
+  </div>
+
+  <div class="card mb-4">
+    <div class="card-header"><h6 class="mb-0">Tabel Prediksi</h6></div>
+    <div class="card-body table-responsive">
+      <table class="table table-bordered table-sm">
+        <thead class="thead-light">
+          <tr>
+            <th>Content</th>
+            <th>Score</th>
+            <th>Sentimen</th>
+            <th>Emosi</th>
+            <th>Ulasan</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in rows %}
+          <tr>
+            <td>{{ row['Cleaned'] }}</td>
+            <td>{{ row['Score'] }}</td>
+            <td>{{ row['sentiment_label'] }}</td>
+            <td>{{ row['emotion_label'] }}</td>
+            <td>{{ row['review_verdict'] }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  {% if evaluation %}
+  <div class="card mb-4">
+    <div class="card-header"><h6 class="mb-0">Evaluasi Model (Sentimen)</h6></div>
+    <div class="card-body">
+      <canvas id="metricChart" height="90"></canvas>
+    </div>
+  </div>
+  {% endif %}
+
+  <div class="row">
+    <div class="col-md-4 mb-3">
+      <div class="card h-100">
+        <div class="card-header"><h6>Distribusi Sentimen</h6></div>
+        <div class="card-body"><canvas id="sentimenChart"></canvas></div>
+      </div>
+    </div>
+    <div class="col-md-4 mb-3">
+      <div class="card h-100">
+        <div class="card-header"><h6>Distribusi Emosi</h6></div>
+        <div class="card-body"><canvas id="emosiChart"></canvas></div>
+      </div>
+    </div>
+    <div class="col-md-4 mb-3">
+      <div class="card h-100">
+        <div class="card-header"><h6>Distribusi Ulasan</h6></div>
+        <div class="card-body"><canvas id="verdictChart"></canvas></div>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<script>
+window.addEventListener('DOMContentLoaded', () => {
+  const form = document.getElementById('predict-form');
+  const progress = document.getElementById('predict-progress');
+  const bar = document.getElementById('predict-bar');
+  const label = document.getElementById('progress-label');
+  const stage = document.getElementById('progress-stage');
+  const steps = document.getElementById('stage-steps');
+
+  form?.addEventListener('submit', () => {
+    progress.classList.remove('d-none');
+    label.classList.remove('d-none');
+    stage.classList.remove('d-none');
+    steps.classList.remove('d-none');
+    bar.style.width = '0%';
+    bar.innerText = '0%';
+    label.innerText = 'Memproses: 0 dari ?';
+    stage.innerText = '⌛ Tahap: Memuat...';
+
+    const stepMap = {
+      'Memuat model...': 'step-load',
+      'Klasifikasi sentimen...': 'step-sentiment',
+      'Klasifikasi emosi...': 'step-emotion',
+      'Mengevaluasi ulasan...': 'step-verdict',
+      'Menyimpan hasil...': 'step-save'
+    };
+
+    async function pollProgress() {
+      const res = await fetch("{{ url_for('ui.predict_progress') }}");
+      const data = await res.json();
+      const { percent = 0, current = 0, total = 0, stage: stageText = '-' } = data;
+
+      bar.style.width = percent + '%';
+      bar.innerText = percent + '%';
+      label.innerText = `Memproses: ${current} dari ${total}`;
+      stage.innerText = `⌛ Tahap: ${stageText}`;
+
+      Object.values(stepMap).forEach(id => {
+        const el = document.getElementById(id);
+        el.classList.remove('text-success');
+        el.innerHTML = `➤ ${el.textContent.replace('✅', '').replace('➤', '').trim()}`;
+      });
+
+      const active = stepMap[stageText];
+      if (active) {
+        const el = document.getElementById(active);
+        el.classList.add('text-success');
+        el.innerHTML = `✅ ${el.textContent.replace('➤', '').trim()}`;
+      }
+
+      if (percent < 100) setTimeout(pollProgress, 400);
+    }
+    pollProgress();
+  });
+
+  {% if evaluation %}
+  const evalLabels = ["Precision", "Recall", "F1-score", "Accuracy"];
+  const evalValues = [
+    {{ evaluation.precision }},
+    {{ evaluation.recall }},
+    {{ evaluation.f1_score }},
+    {{ evaluation.accuracy }}
+  ];
+  new Chart(document.getElementById("metricChart"), {
+    type: 'bar',
+    data: {
+      labels: evalLabels,
+      datasets: [{
+        label: "Evaluasi",
+        backgroundColor: ['#0d6efd', '#198754', '#ffc107', '#dc3545'],
+        data: evalValues
+      }]
+    },
+    options: {
+      indexAxis: 'y',
+      scales: { x: { min: 0, max: 1 } },
+      plugins: {
+        legend: { display: false },
+        title: { display: false }
+      }
+    }
+  });
+  {% endif %}
+
+  {% if rows %}
+  const rows = {{ rows | tojson }};
+  const colors = ['#0d6efd', '#198754', '#ffc107', '#dc3545', '#6610f2'];
+
+  function countBy(rows, key) {
+    const counts = {};
+    rows.forEach(r => {
+      const label = r[key];
+      counts[label] = (counts[label] || 0) + 1;
+    });
+    return counts;
+  }
+
+  function drawChart(id, key) {
+    const data = countBy(rows, key);
+    const ctx = document.getElementById(id).getContext('2d');
+    const labels = Object.keys(data);
+    const values = Object.values(data);
+    const total = values.reduce((a, b) => a + b, 0);
+
+    new Chart(ctx, {
+      type: 'pie',
+      data: {
+        labels: labels.map((l, i) => `${l} (${((values[i] / total) * 100).toFixed(1)}%)`),
+        datasets: [{
+          data: values,
+          backgroundColor: colors.slice(0, labels.length)
+        }]
+      },
+      options: {
+        plugins: {
+          legend: { position: 'bottom' },
+          title: { display: false }
+        }
+      }
+    });
+  }
+
+  // Gambar semua chart
+  drawChart("sentimenChart", "sentiment_label");
+  drawChart("emosiChart", "emotion_label");
+  drawChart("verdictChart", "review_verdict");
+  {% endif %}
+});
+</script>
+{% endblock %}

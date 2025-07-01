@@ -5,6 +5,31 @@ import time
 import string
 import unicodedata
 import csv
+import torch
+import torch.nn.functional as F
+from transformers import AutoTokenizer, AutoModelForSequenceClassification
+
+
+def map_labels(preds, label_list):
+    if hasattr(preds[0], '__iter__'):  # misal pred-nya probabilitas
+        indices = [p.argmax() for p in preds]
+    else:
+        indices = preds
+    return [label_list[i] for i in indices]
+
+
+def predict_sentiment(cleaned_texts):
+    # load model_sentiment dari file atau cache
+    preds = model_sentiment.predict(cleaned_texts)
+    return map_labels(preds, ['negatif', 'positif'])
+
+def predict_emotion(cleaned_texts):
+    preds = model_emotion.predict(cleaned_texts)
+    return map_labels(preds, ['marah', 'senang'])  # bisa disesuaikan
+
+def predict_review(cleaned_texts):
+    preds = model_review.predict(cleaned_texts)
+    return map_labels(preds, ['palsu', 'asli'])
 
 
 def get_preprocessed_outputs():
