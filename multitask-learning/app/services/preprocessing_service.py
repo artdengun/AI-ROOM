@@ -6,6 +6,14 @@ import string
 import unicodedata
 import csv
 
+
+def get_preprocessed_outputs():
+    project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
+    path = os.path.join(project_root, 'uploads', 'outputs')
+    files = [f for f in os.listdir(path) if f.startswith("preprocessed_") and f.endswith(".csv")]
+    return sorted(files)
+
+
 def load_normalization_dict(filepath='file/kamus_normalisasi.csv'):
     normalization_dict = {}
     if not os.path.exists(filepath):

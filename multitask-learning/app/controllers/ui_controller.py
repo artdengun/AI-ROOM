@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, redirect, session, url_for, flash, jsonify
+from flask import Blueprint, current_app, render_template, request, redirect, session, url_for, flash, jsonify
 import os
 import pandas as pd
 from app.services.dataset_service import (
@@ -7,7 +7,7 @@ from app.services.dataset_service import (
     read_dataset_preview, 
     delete_dataset
 )
-from app.services.preprocessing_service import run_preprocessing_pipeline
+from app.services.preprocessing_service import get_preprocessed_outputs, run_preprocessing_pipeline
 
 
 
@@ -120,6 +120,37 @@ def signin():
 @ui_bp.route('/sign-up')
 def singnup():
     return render_template('sign-up.html')
+
+@ui_bp.route('/training', methods=['GET', 'POST'])
+def training():
+    datasets = get_preprocessed_outputs()
+
+    if request.method == 'POST':
+        selected_file = request.form.get('dataset')
+        if not selected_file:
+            flash("Dataset belum dipilih.", "error")
+            return redirect(url_for('ui.training'))
+
+        project_root = os.path.abspath(os.path.join(current_app.root_path, '..'))
+        file_path = os.path.join(project_root, 'uploads', 'outputs', selected_file)
+        df = pd.read_csv(file_path)
+
+        from sklearn.model_selection import train_test_split
+        train, test = train_test_split(df, test_size=0.2, random_state=42)
+
+        # Save hasil training ke session untuk render chart + detail
+        session['train_chart'] = {
+            'filename': selected_file,
+            'total': len(df),
+            'train': len(train),
+            'test': len(test)
+        }
+
+        flash("Training selesai!", "success")
+        return redirect(url_for('ui.training'))
+
+    chart_data = session.pop('train_chart', None)
+    return render_template("training.html", datasets=datasets, chart_data=chart_data)
 
 @ui_bp.route('/dataset', methods=['GET', 'POST'])
 def dataset():
