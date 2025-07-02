@@ -144,24 +144,26 @@ window.addEventListener('DOMContentLoaded', () => {
       const data = await res.json();
       const { percent = 0, current = 0, total = 0, stage: stageText = '-' } = data;
 
+      bar.style.transition = 'width 0.3s ease-in-out';
       bar.style.width = percent + '%';
       bar.innerText = percent + '%';
       label.innerText = `Memproses: ${current} dari ${total}`;
       stage.innerText = `⌛ Tahap: ${stageText}`;
 
-      Object.values(stepMap).forEach(id => {
+      Object.entries(stepMap).forEach(([text, id]) => {
         const el = document.getElementById(id);
         el.classList.remove('text-success');
-        el.innerHTML = `➤ ${el.textContent.replace('✅', '').replace('➤', '').trim()}`;
+        const clean = el.textContent.replace('✅', '').replace('➤', '').trim();
+        el.innerHTML = `➤ ${clean}`;
       });
 
       const active = stepMap[stageText];
-      if (active) {
-        const el = document.getElementById(active);
-        el.classList.add('text-success');
-        el.innerHTML = `✅ ${el.textContent.replace('➤', '').trim()}`;
-      }
-
+        if (active) {
+          const el = document.getElementById(active);
+          el.classList.add('text-success');
+          const clean = el.textContent.replace('✅', '').replace('➤', '').trim();
+          el.innerHTML = `✅ ${clean}`;
+        }
       if (percent < 100) setTimeout(pollProgress, 400);
     }
     pollProgress();

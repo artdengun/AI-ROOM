@@ -34,7 +34,8 @@ def run_prediction():
         flash("File tidak ditemukan!", "error")
         return redirect(url_for('ui.prediction_form'))
 
-    df = pd.read_csv(file_path).head(20)
+#   df = pd.read_csv(file_path).head(20)
+    df = pd.read_csv(file_path)
 
     if 'Cleaned' not in df.columns or 'Score' not in df.columns:
         flash("Dataset harus mengandung kolom 'Cleaned' dan 'Score'", "error")
@@ -245,6 +246,11 @@ def run_pipeline():
 @ui_bp.route('/sign-in')
 def signin():
     return render_template('sign-in.html')
+
+@ui_bp.route('/logout')
+def logout():
+    return render_template('sign-in.html')
+
 @ui_bp.route('/sign-up')
 def singnup():
     return render_template('sign-up.html')
