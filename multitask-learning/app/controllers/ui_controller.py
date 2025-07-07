@@ -46,6 +46,10 @@ def run_prediction():
     session['progress_total'] = len(df)
     session['progress_stage'] = 'Memuat model...'
 
+    # === Setup Device ===
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    print("Using device:", device)
+
     # === Load Models ===
     sent_model = "taufiqdp/indonesian-sentiment"
     emo_model = "thoriqfy/indobert-emotion-classification"

@@ -20,6 +20,7 @@ from bertopic import BERTopic # type: ignore
 from sklearn.metrics import classification_report, confusion_matrix # type: ignore
 from tensorflow.keras.optimizers import Adam # type: ignore
 from textblob import TextBlob # type: ignore
+from sklearn.feature_extraction.text import TfidfVectorizer
 
 # Pastikan Plotly bisa menampilkan grafik
 pio.renderers.default = "colab"
@@ -79,6 +80,7 @@ for p in ax.patches:
 sns.despine()
 plt.tight_layout()
 plt.show()
+
 
 # Distribusi Sentimen
 
@@ -174,6 +176,84 @@ total_reviews = len(all_ratings)
 average_rating = all_ratings.mean()
 
 # ==================== VISUALIZATION ====================
+
+# === Inisialisasi TF-IDF Vectorizer ===
+tfidf_vectorizer = TfidfVectorizer(max_features=1000)
+tfidf_matrix = tfidf_vectorizer.fit_transform(df['cleaned_review'])
+
+# === Hitung Rata-rata Skor TF-IDF ===
+avg_scores = np.asarray(tfidf_matrix.mean(axis=0)).flatten()
+tfidf_vocab = tfidf_vectorizer.get_feature_names_out()
+
+# === Buat DataFrame TF-IDF dan Ambil Top 5 Kata ===
+tfidf_df = pd.DataFrame({
+    'Kata': tfidf_vocab,
+    'Skor_TFIDF': avg_scores
+}).sort_values(by='Skor_TFIDF', ascending=False).head(5)
+
+# === Visualisasi Tabel Skor TF-IDF Top 5 Kata ===
+fig, ax = plt.subplots(figsize=(6, 2.5))
+ax.axis('off')
+
+table_data = tfidf_df.reset_index(drop=True)
+table = ax.table(cellText=table_data.values,
+                 colLabels=table_data.columns,
+                 cellLoc='center',
+                 loc='center')
+table.auto_set_font_size(False)
+table.set_fontsize(10)
+table.scale(1.2, 1.2)
+
+plt.title("Visualisasi Skor TF-IDF Top 5 Kata", fontsize=12)
+plt.tight_layout()
+plt.show()
+
+# === Filter Review Berdasarkan Sentimen ===
+neg_df = df[df['Rating'] <= 2]
+pos_df = df[df['Rating'] >= 4]
+
+# === TF-IDF untuk Ulasan Negatif ===
+neg_vectorizer = TfidfVectorizer(max_features=1000)
+neg_matrix = neg_vectorizer.fit_transform(neg_df['cleaned_review'])
+neg_avg_scores = np.asarray(neg_matrix.mean(axis=0)).flatten()
+neg_vocab = neg_vectorizer.get_feature_names_out()
+neg_df_tfidf = pd.DataFrame({
+    'Kata': neg_vocab,
+    'Skor_TFIDF': neg_avg_scores
+}).sort_values(by='Skor_TFIDF', ascending=False).head(5)
+
+# === TF-IDF untuk Ulasan Positif ===
+pos_vectorizer = TfidfVectorizer(max_features=1000)
+pos_matrix = pos_vectorizer.fit_transform(pos_df['cleaned_review'])
+pos_avg_scores = np.asarray(pos_matrix.mean(axis=0)).flatten()
+pos_vocab = pos_vectorizer.get_feature_names_out()
+pos_df_tfidf = pd.DataFrame({
+    'Kata': pos_vocab,
+    'Skor_TFIDF': pos_avg_scores
+}).sort_values(by='Skor_TFIDF', ascending=False).head(5)
+
+# === Gabung Dua Tabel untuk Perbandingan ===
+comparison_df = pd.concat([
+    neg_df_tfidf.assign(Kategori='Negatif'),
+    pos_df_tfidf.assign(Kategori='Positif')
+])
+
+# === Visualisasi Pie Chart Top 5 Kata TF-IDF ===
+plt.figure(figsize=(7, 7))
+colors = sns.color_palette('flare', n_colors=5)
+plt.pie(tfidf_df['Skor_TFIDF'], 
+        labels=tfidf_df['Kata'], 
+        autopct='%1.2f%%', 
+        startangle=140, 
+        colors=colors,
+        wedgeprops={'edgecolor': 'white'})
+plt.title('Distribusi Proporsi Skor TF-IDF (Top 5 Kata)', fontsize=14)
+plt.tight_layout()
+plt.show()
+
+# === Cetak ke Terminal ===
+print("\n🔍 Top 5 Kata Berdasarkan Skor TF-IDF:")
+print(tfidf_df.to_string(index=False))
 
 plt.figure(figsize=(15, 10))
 
