@@ -9,7 +9,7 @@ from pyspark.sql import SparkSession, Row
 def create_spark_session():
     return SparkSession.builder \
         .appName("BigData") \
-        .master("spark://localhost:7077") \
+        .master("spark://172.20.10.2:7077") \
         .config("spark.driver.memory", "1g") \
         .config("spark.driver.bindAddress", "127.0.0.1") \
         .config("spark.executor.memory", "1g") \
